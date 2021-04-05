@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1840284267116437654}
   - component: {fileID: 1971024188993945806}
   - component: {fileID: 1972210966904302138}
-  - component: {fileID: 3138865690233008455}
+  - component: {fileID: 3757876075867803062}
   m_Layer: 0
   m_Name: TrailsSuccess
   m_TagString: Untagged
@@ -223,7 +223,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 0, g: 1, b: 0.047753334, a: 0.5019608}
+      maxColor: {r: 0, g: 1, b: 0.08972359, a: 0.5019608}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -4894,7 +4894,7 @@ ParticleSystemRenderer:
   m_Mesh2: {fileID: 0}
   m_Mesh3: {fileID: 0}
   m_MaskInteraction: 0
---- !u!114 &3138865690233008455
+--- !u!114 &3757876075867803062
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

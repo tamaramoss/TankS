@@ -1,12 +1,10 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ExplosionScript : MonoBehaviour
 {
     private ParticleSystem particles;
-    public void Start()
+
+    private void Awake()
     {
         particles = GetComponent<ParticleSystem>();
     }
@@ -15,8 +13,8 @@ public class ExplosionScript : MonoBehaviour
     {
         if (!particles.isPlaying)
         {
-            gameObject.SetActive(false);
             particles.Clear();
+            gameObject.SetActive(false);
         }
     }
 }

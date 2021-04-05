@@ -1,10 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
-using UnityEngine.Serialization;
-using Random = UnityEngine.Random;
 
 public class ProjectileBehaviour : MonoBehaviour, IPoolable
 {
@@ -15,8 +9,8 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
     private float moveSpeed;
     private float rotateSpeed;
     private bool isHoming;
-    
 
+    private ParticleSystem fly;
     private Rigidbody rb;
     void Start()
     {
@@ -26,8 +20,13 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
         rotateSpeed = Projectile.rotateSpeed;
         rb = GetComponent<Rigidbody>();
         pools = SpawnPools.Instance;
+        
     }
 
+    private void Awake()
+    {
+        fly = transform.Find("Fly").GetComponent<ParticleSystem>();
+    }
 
     void FixedUpdate()
     {
@@ -44,44 +43,49 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
         {
             pools.SpawnFromPool("Fail", transform);
         }
+        
+        fly.Stop();
         gameObject.SetActive(false);
     }
 
     public void OnSpawn()
     {
-        var p = transform.Find("Fly").GetComponent<ParticleSystem>();
-        p.Clear();
-        p.Play();
+        fly.Clear();
+        fly.Play();
     }
-
+    
     private void ProjectileMovement()
     {
         if (isHoming)
         {
             var target = SearchTarget();
-            var rotateAmount = Quaternion.LookRotation((target - transform.position) );
-            rb.MoveRotation(Quaternion.RotateTowards(transform.rotation, rotateAmount, rotateSpeed));
+
+            if (!(target == Vector3.zero))
+            {
+                var rotateAmount = Quaternion.LookRotation(target - transform.position);
+                rb.MoveRotation(Quaternion.RotateTowards(transform.rotation, rotateAmount, rotateSpeed));
+            }
         }
         
-        rb.velocity = transform.forward * (moveSpeed * Time.deltaTime);
+        rb.velocity = transform.forward * (moveSpeed * Time.fixedDeltaTime);
     }
 
     private Vector3 SearchTarget()
     {
-        var activeTargets = SpawnPools.Instance.GetActivePoolObjects("Targets");
+        var activeTargets = pools.GetActivePoolObjects("Targets");
         
-        if (activeTargets.Count == 0)
-            return Vector3.left;
-        
-        float distance = 10000;
+        if (activeTargets?.Count == 0)
+            return Vector3.zero;
+
+        float shortestDis = Vector3.Distance(activeTargets[0].transform.position, transform.position);
         int idxOfNearestTarget = 0;
 
-        for (int i = 0; i < activeTargets.Count; i++)
+        for (int i = 1; i < activeTargets.Count; i++)
         {
-            var d = Vector3.Distance(activeTargets[i].transform.position, transform.position);
-            if (d < distance)
+            var currentDis = Vector3.Distance(activeTargets[i].transform.position, transform.position);
+            if (currentDis < shortestDis)
             {
-                distance = d;
+                shortestDis = currentDis;
                 idxOfNearestTarget = i;
             }
         }

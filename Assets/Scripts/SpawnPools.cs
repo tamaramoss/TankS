@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,7 +10,6 @@ public class SpawnPools : MonoBehaviour
         public GameObject prefab;
         public int size;
     }
-
     
     public List<Pool> pools;
     private Dictionary<string, Queue<GameObject>> poolsDictionary;
@@ -25,15 +22,13 @@ public class SpawnPools : MonoBehaviour
 
         foreach (var pool in pools)
         {
-            Queue<GameObject> objectPool = new Queue<GameObject>(); 
-                
-            for (int i = 0; i < pool.size; i++)
+            Queue<GameObject> objectPool = new Queue<GameObject>();
+            for (var i = 0; i < pool.size; i++)
             {
                 var obj = Instantiate(pool.prefab);
                 obj.SetActive(false);
                 objectPool.Enqueue(obj);
             }
-            
             poolsDictionary.Add(pool.tag, objectPool);
         }
     }

@@ -7,49 +7,40 @@ public class TargetScript : MonoBehaviour, IPoolable
     private Bounds levelArea;
     private float height;
     private bool wasHit;
+    private float radius;
+    
     void Awake()
     {
         levelArea = GameManager.Instance.LevelBounds;
         height = GameManager.Instance.SpawnHeight;
         wasHit = false;
+        radius = transform.GetComponent<SphereCollider>().radius;
     }
 
     private void OnCollisionEnter (Collision other)
     {
-        if (other.transform.CompareTag("Projectile") && !wasHit)
-        {
-            GameManager.Instance.StartCoroutine("SpawnNewTarget");
-            gameObject.SetActive(false);
-            wasHit = true;
-        }
+        if (!other.transform.CompareTag("Projectile") || wasHit) return;
+        GameManager.Instance.StartCoroutine("SpawnNewTarget");
+        gameObject.SetActive(false);
+        wasHit = true;
     }
 
     public void OnSpawn()
     {
         wasHit = false;
-        bool validPositionFound = false;
-        int count = 0;
-        
-        while (!validPositionFound && count <= 40)
-        {
-            var spawnPosition = GenerateSpawnPosition();
-            bool hit = Physics.SphereCast(spawnPosition, transform.GetComponent<Collider>().bounds.extents.x / 2, Vector3.zero, out var hitInfo);
-            
-            if (!hit)
-            {
-                transform.position = spawnPosition;
-                validPositionFound = true;
-            }
+        Vector3 spawnPosition;
 
-            count++;
-        }
+        do {
+            spawnPosition = GenerateSpawnPosition();
+        } while (Physics.OverlapSphere(spawnPosition, radius).Length != 0);
+        
+        transform.position = spawnPosition;
     }
 
     private Vector3 GenerateSpawnPosition()
     {
         var min = levelArea.min;
         var max = levelArea.max;
-        var sphereSize = transform.GetComponent<Collider>().bounds.extents.x * 2;
-        return new Vector3(Random.Range(min.x + sphereSize , max.x - sphereSize), height, Random.Range(min.z + sphereSize, max.z - sphereSize));
+        return new Vector3(Random.Range(min.x + radius , max.x - radius), height, Random.Range(min.z + radius, max.z - radius));
     }
 }

@@ -4,41 +4,42 @@ using UnityEngine.InputSystem;
 public class PlayerScript : MonoBehaviour
 {
     public float playerSpeed;
-    public float rotationSpeed;
+    public float rotationSpeed;    
+    public float aimSpeed;
+
     private Rigidbody rb;
-    private GameObject top;
+    private Transform topRb;
+    private Camera main;
+    private Vector3 readMoveValue;
+    private Vector2 readMouseValue;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
-        top = gameObject.transform.Find("Top").gameObject;
+        topRb = transform.Find("Top");
+        main = Camera.main;
+    }
+
+    private void FixedUpdate()
+    {
+
+        ApplyMovement();
+        ApplyAim();
     }
 
     public void OnMoveTank(InputAction.CallbackContext context)
     {
-        var readValue = context.ReadValue<Vector2>();
-        
-        if (readValue.y != 0.0f)
-        {
-            var moveForce = transform.forward * readValue.y * playerSpeed;
-            //transform.Translate(moveForce);
-            rb.AddForce(moveForce);
-        }
-        else
-        {
-            rb.velocity = Vector3.zero;
-        }
+        readMoveValue = context.ReadValue<Vector2>();
+        //Debug.Log(readMoveValue);
+    }
 
-        if (readValue.x != 0.0f)
-        {
-            var rotationForce = Vector3.up * readValue.x *  playerSpeed;
-            //transform.Rotate(rotationForce);
-            rb.AddTorque(rotationForce);
-        }
-        else
-        {
-            rb.angularVelocity = Vector3.zero;
-        }
+    private void ApplyMovement()
+    {
+        var wantedVelocity = transform.forward * (readMoveValue.y * playerSpeed * Time.fixedDeltaTime);
+        rb.AddForce(wantedVelocity);
+        
+        var wantedRotationForce = Vector3.up * (readMoveValue.x * rotationSpeed * Time.fixedDeltaTime);
+        rb.AddTorque(wantedRotationForce);
     }
 
     public void OnShoot(InputAction.CallbackContext context)
@@ -70,19 +71,53 @@ public class PlayerScript : MonoBehaviour
 
     public void OnAim(InputAction.CallbackContext context)
     {
-        var mousePos = context.ReadValue<Vector2>();
-        Ray ray = Camera.main.ScreenPointToRay(mousePos);
-        
-        if (Physics.Raycast(ray, out var hit)) {
-            Vector3 hitPoint = new Vector3(hit.point.x, GameManager.Instance.SpawnHeight, hit.point.z);
-
-            if (Vector3.Distance(transform.position, hitPoint) > 5)
-            {
-                top.transform.LookAt(hitPoint);
-
-            }    
-            
-        }   
+        readMouseValue = context.ReadValue<Vector2>();
     }
-}
+
+    private void ApplyAim()
+    {
+        Ray ray = main.ScreenPointToRay(readMouseValue);
+        Quaternion targetRotation;
+        Quaternion currentRotation = topRb.rotation;
+        Vector3 hitPoint = Vector3.zero;
+        RaycastHit hit;
+ 
+        if (Physics.Raycast(ray, out hit))
+        {
+            hitPoint = new Vector3(hit.point.x, GameManager.Instance.SpawnHeight, hit.point.z);
+            targetRotation = Quaternion.LookRotation(hitPoint - topRb.position);
+        }
+        else
+        {
+            targetRotation = Quaternion.LookRotation(ray.direction);
+        }
+        float angularDifference = Quaternion.Angle(currentRotation, targetRotation);
+        if (angularDifference > 0 /*&& Vector3.Distance(transform.position, hitPoint) > 5*/)
+        {
+            Debug.Log(targetRotation);
+            var newR = new Quaternion(0, targetRotation.y, 0, targetRotation.w);
+            topRb.rotation = Quaternion.RotateTowards(topRb.rotation, newR, aimSpeed * Time.fixedDeltaTime);
+            // topRb.rotation = Quaternion.Slerp
+            // (
+            //     topRb.rotation,
+            //     targetRotation,
+            //     aimSpeed * Time.fixedDeltaTime
+            // );
+            
+        }
+        // else
+        // {
+        //     topRb.rotation = targetRotation;
+        // }
+        
+        // if (Physics.Raycast(ray, out var hit)) {
+        //     Vector3 hitPoint = new Vector3(hit.point.x, GameManager.Instance.SpawnHeight, hit.point.z);
+        //
+        //     if (Vector3.Distance(transform.position, hitPoint) > 5)
+        //     {
+        //         topRb.LookAt(hitPoint);
+        //     }
+        // } 
+    }
+} 
 
