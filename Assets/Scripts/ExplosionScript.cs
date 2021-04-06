@@ -11,10 +11,9 @@ public class ExplosionScript : MonoBehaviour
 
     public void Update()
     {
-        if (!particles.isPlaying)
-        {
-            particles.Clear();
-            gameObject.SetActive(false);
-        }
+        // Reset the particle system after it finished and set game object inactive
+        if (particles.isPlaying) return;
+        particles.Clear();
+        gameObject.SetActive(false);
     }
 }

@@ -15,4 +15,4 @@ MonoBehaviour:
   name: Homing
   moveSpeed: 600
   homing: 1
-  rotateSpeed: 5
+  rotateSpeed: 8

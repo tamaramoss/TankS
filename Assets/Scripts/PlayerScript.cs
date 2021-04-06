@@ -1,47 +1,52 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
+
 public class PlayerScript : MonoBehaviour
 {
-    public float playerSpeed;
+    public float moveSpeed;
     public float rotationSpeed;    
     public float aimSpeed;
 
     private Rigidbody rb;
-    private Transform topRb;
+    private Transform tankTopTransform;
     private Camera main;
     private Vector3 readMoveValue;
     private Vector2 readMouseValue;
+    private float aimHeight;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
-        topRb = transform.Find("Top");
+        tankTopTransform = transform.Find("Top");
         main = Camera.main;
+        aimHeight = GameManager.Instance.SpawnHeight;
     }
 
     private void FixedUpdate()
     {
-
         ApplyMovement();
         ApplyAim();
     }
 
+    // Update the value, gets called with events
     public void OnMoveTank(InputAction.CallbackContext context)
     {
         readMoveValue = context.ReadValue<Vector2>();
-        //Debug.Log(readMoveValue);
     }
-
+    
+    // Rotate the tank and move him forward
     private void ApplyMovement()
     {
-        var wantedVelocity = transform.forward * (readMoveValue.y * playerSpeed * Time.fixedDeltaTime);
+        var wantedVelocity = transform.forward * (readMoveValue.y * moveSpeed);
         rb.AddForce(wantedVelocity);
         
-        var wantedRotationForce = Vector3.up * (readMoveValue.x * rotationSpeed * Time.fixedDeltaTime);
+        var wantedRotationForce = Vector3.up * (readMoveValue.x * rotationSpeed);
         rb.AddTorque(wantedRotationForce);
     }
 
+    // Called on click event
     public void OnShoot(InputAction.CallbackContext context)
     {
         if (!context.started)
@@ -52,72 +57,63 @@ public class PlayerScript : MonoBehaviour
             transform.Find("Top").Find("ProjectileSpawnPosition"));
     }
 
+    // The action string looks like this:
+    // action=PlayerTank/ShootMain[/Mouse/leftButton]
+    // Pools named like action -> spawn right projectile with action name
     private string GetProjectileName(string actionString)
     {
-        // The action string looks like this:
-        // action=PlayerTank/ShootMain[/Mouse/leftButton]
-        // So I named the pools like the action, here "ShootMain" 
-        // so I don't have to make an extra method for every projectile type
-
         var startIdx = actionString.IndexOf('/');
         return actionString.Substring( startIdx + 1,
             (actionString.IndexOf('[') - startIdx) - 1);
     }
 
+    // Some time between shooting
     IEnumerator Shoot()
     {
         yield return new WaitForSeconds(1f);
     }
 
+    // Called when new mouse input is detected
     public void OnAim(InputAction.CallbackContext context)
     {
         readMouseValue = context.ReadValue<Vector2>();
     }
 
+    // Rotate the top of the tank towards the mouse
     private void ApplyAim()
     {
-        Ray ray = main.ScreenPointToRay(readMouseValue);
+        // make a ray from the camera to screen mouse position 
+        var ray = main.ScreenPointToRay(readMouseValue);
+        var currentRotation = tankTopTransform.rotation;
         Quaternion targetRotation;
-        Quaternion currentRotation = topRb.rotation;
-        Vector3 hitPoint = Vector3.zero;
-        RaycastHit hit;
- 
-        if (Physics.Raycast(ray, out hit))
+
+        if (Physics.Raycast(ray, out var hit))
         {
-            hitPoint = new Vector3(hit.point.x, GameManager.Instance.SpawnHeight, hit.point.z);
-            targetRotation = Quaternion.LookRotation(hitPoint - topRb.position);
+            // Fix the y value ( I want to mouse to be the same height ) and calculate a quaternion
+            // with the direction from tank position to our hit point
+            var hitPointFixedY = new Vector3(hit.point.x, aimHeight, hit.point.z);
+            targetRotation = Quaternion.LookRotation(hitPointFixedY - tankTopTransform.position);
         }
         else
         {
+            // If nothing was hit take ray direction
             targetRotation = Quaternion.LookRotation(ray.direction);
         }
+        
+        // Check if I need to rotate towards
         float angularDifference = Quaternion.Angle(currentRotation, targetRotation);
-        if (angularDifference > 0 /*&& Vector3.Distance(transform.position, hitPoint) > 5*/)
+        if (angularDifference > 0)
         {
-            Debug.Log(targetRotation);
-            var newR = new Quaternion(0, targetRotation.y, 0, targetRotation.w);
-            topRb.rotation = Quaternion.RotateTowards(topRb.rotation, newR, aimSpeed * Time.fixedDeltaTime);
+            // Only Y axis rotation wanted
+            var qOnlyYAxisRotation = new Quaternion(0, targetRotation.y, 0, targetRotation.w);
+            tankTopTransform.rotation = Quaternion.RotateTowards(tankTopTransform.rotation, qOnlyYAxisRotation, aimSpeed);
             // topRb.rotation = Quaternion.Slerp
             // (
             //     topRb.rotation,
-            //     targetRotation,
+            //     newR,
             //     aimSpeed * Time.fixedDeltaTime
             // );
-            
         }
-        // else
-        // {
-        //     topRb.rotation = targetRotation;
-        // }
-        
-        // if (Physics.Raycast(ray, out var hit)) {
-        //     Vector3 hitPoint = new Vector3(hit.point.x, GameManager.Instance.SpawnHeight, hit.point.z);
-        //
-        //     if (Vector3.Distance(transform.position, hitPoint) > 5)
-        //     {
-        //         topRb.LookAt(hitPoint);
-        //     }
-        // } 
     }
 } 
 

@@ -5,16 +5,17 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public int TargetCount;
-    public GameObject LevelGround;
-    public Transform SpawnPosition;
+    public int ActiveTargetsInLevel;
+    public GameObject Level;
+    public Transform ProjectileSpawnPosition;
     public float secondsWaitToSpawn = 2f;
 
-    public Bounds LevelBounds => LevelGround.GetComponent<Collider>().bounds;
-    public float SpawnHeight => SpawnPosition.position.y;
+    public Bounds LevelBounds => Level.GetComponent<Collider>().bounds;
+    public float SpawnHeight => ProjectileSpawnPosition.position.y;
 
     private SpawnPools pools;
     
+    // Singleton
     public static GameManager Instance;
     private void Awake()
     {
@@ -24,11 +25,15 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         pools = SpawnPools.Instance;
-        for (int i = 0; i < TargetCount; i++)
+        
+        // Spawn the targets that should be in the level
+        for (int i = 0; i < ActiveTargetsInLevel; i++)
         {
             pools.SpawnFromPool("Targets");
         }
     }
+    
+    // Spawn new target after some seconds
     public IEnumerator SpawnNewTarget()
     {
         yield return new WaitForSeconds(secondsWaitToSpawn);

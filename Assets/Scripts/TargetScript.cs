@@ -8,23 +8,35 @@ public class TargetScript : MonoBehaviour, IPoolable
     private float height;
     private bool wasHit;
     private float radius;
+    private GameManager gameManager;
     
     void Awake()
     {
-        levelArea = GameManager.Instance.LevelBounds;
-        height = GameManager.Instance.SpawnHeight;
-        wasHit = false;
+        gameManager = GameManager.Instance;
+        levelArea = gameManager.LevelBounds;
+        height = gameManager.SpawnHeight;
         radius = transform.GetComponent<SphereCollider>().radius;
+
+        wasHit = false;
     }
 
     private void OnCollisionEnter (Collision other)
     {
-        if (!other.transform.CompareTag("Projectile") || wasHit) return;
-        GameManager.Instance.StartCoroutine("SpawnNewTarget");
-        gameObject.SetActive(false);
+        // Check if target was hit by a projectile and wasn't hit already
+        if (!other.transform.CompareTag("Projectile") || wasHit) 
+            return;
+        
+        // Quicc fix to avoid spawning more then one target when multiple collisions occur
         wasHit = true;
+        
+        // Spawn Target after 2 seconds
+        gameManager.StartCoroutine("SpawnNewTarget");
+        
+        // Set hit target inactive 
+        gameObject.SetActive(false);
     }
 
+    // Search for a random position on the map for the target 
     public void OnSpawn()
     {
         wasHit = false;
@@ -37,6 +49,7 @@ public class TargetScript : MonoBehaviour, IPoolable
         transform.position = spawnPosition;
     }
 
+    // Returns a random position in the level bounds 
     private Vector3 GenerateSpawnPosition()
     {
         var min = levelArea.min;

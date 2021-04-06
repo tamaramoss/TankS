@@ -20,7 +20,6 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
         rotateSpeed = Projectile.rotateSpeed;
         rb = GetComponent<Rigidbody>();
         pools = SpawnPools.Instance;
-        
     }
 
     private void Awake()
@@ -35,6 +34,7 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
 
     private void OnCollisionEnter (Collision other)
     {
+        // If projectile hit, spawn corresponding particle system (Fail / Success)
         if (other.transform.CompareTag("Target"))
         {
             pools.SpawnFromPool("Success", transform);
@@ -44,10 +44,12 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
             pools.SpawnFromPool("Fail", transform);
         }
         
+        // Stop smoke particle system, set game object inactive
         fly.Stop();
         gameObject.SetActive(false);
     }
 
+    // Reset particle system on spawn
     public void OnSpawn()
     {
         fly.Clear();
@@ -58,8 +60,9 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
     {
         if (isHoming)
         {
-            var target = SearchTarget();
+            var target = SearchNearestTarget();
 
+            // Only rotate projectile if a target was active
             if (!(target == Vector3.zero))
             {
                 var rotateAmount = Quaternion.LookRotation(target - transform.position);
@@ -70,13 +73,17 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
         rb.velocity = transform.forward * (moveSpeed * Time.fixedDeltaTime);
     }
 
-    private Vector3 SearchTarget()
+    // Search nearest target in the level
+    private Vector3 SearchNearestTarget()
     {
+        // Get the active targets
         var activeTargets = pools.GetActivePoolObjects("Targets");
         
+        // No active? Then return
         if (activeTargets?.Count == 0)
             return Vector3.zero;
 
+        // Search for the shortest distance 
         float shortestDis = Vector3.Distance(activeTargets[0].transform.position, transform.position);
         int idxOfNearestTarget = 0;
 
@@ -90,6 +97,7 @@ public class ProjectileBehaviour : MonoBehaviour, IPoolable
             }
         }
         
+        // and return the position of the nearest target
         return activeTargets[idxOfNearestTarget].transform.position;
     }
 }

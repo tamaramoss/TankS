@@ -11,15 +11,20 @@ public class SpawnPools : MonoBehaviour
         public int size;
     }
     
+    // The pools we want to initialize
     public List<Pool> pools;
+    
+    // The pools we can spawn from by its tag
     private Dictionary<string, Queue<GameObject>> poolsDictionary;
     
+    // Singleton
     public static SpawnPools Instance;
     private void Awake()
     {
         Instance = this;
         poolsDictionary = new Dictionary<string, Queue<GameObject>>();
 
+        // Initialize the objects defined in the pools, add them to the Queue and add to dictionary  
         foreach (var pool in pools)
         {
             Queue<GameObject> objectPool = new Queue<GameObject>();
@@ -33,6 +38,7 @@ public class SpawnPools : MonoBehaviour
         }
     }
     
+    // Return the active game objects of a pool
     public List<GameObject> GetActivePoolObjects(string tag)
     {
         if (!poolsDictionary.ContainsKey(tag))
@@ -51,6 +57,7 @@ public class SpawnPools : MonoBehaviour
         return wantedObjects;
     }
 
+    // Spawn an object from a certain pool, optional: with given transform 
     public GameObject SpawnFromPool(string tag, Transform tf = null)
     {
         if (!poolsDictionary.ContainsKey(tag))
